@@ -37,6 +37,3 @@ python ".\Laboratório I\client.py" "Sua mensagem aqui"
 - Cada conexão trata apenas um pedido e é encerrada.
 - O servidor cria uma thread por conexão (`daemon=True`).
 - Porta e host podem ser ajustados editando constantes em `server.py` e `client.py`.
-
-## Link do repositório
-- Após publicar, cole aqui o link do seu repositório Git contendo `server.py`, `client.py` e este `README.md`.
