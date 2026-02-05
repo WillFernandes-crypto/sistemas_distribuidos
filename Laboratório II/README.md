@@ -28,7 +28,6 @@ python ".\Laboratório II\client.py"
 ## Observações
 - O servidor usa `ThreadedServer` na porta `8001`.
 - O cliente invoca `conn.root.get_time()`.
-# Laboratório I — Modelo Cliente/Servidor com Sockets (Python)
 
 ## Descrição
 - Servidor TCP multithread escutando em `8000`.
@@ -67,34 +66,3 @@ python ".\Laboratório I\client.py" "Sua mensagem aqui"
 - Cada conexão trata apenas um pedido e é encerrada.
 - O servidor cria uma thread por conexão (`daemon=True`).
 - Porta e host podem ser ajustados editando constantes em `server.py` e `client.py`.
-
-# Laboratório II — Modelo RPC com RPyC
-
-## Descrição
-- Servidor RPyC que expõe um único método remoto: retornar o horário atual.
-- Cliente solicita o horário ao servidor e encerra.
-
-## Requisitos
-- Python 3.8+
-- Biblioteca RPyC
-
-## Como executar
-
-1. Instalar dependência:
-```powershell
-pip install rpyc
-```
-
-2. Iniciar o servidor:
-```powershell
-python ".\Laboratório I\server_rpc.py"
-```
-
-3. Executar o cliente:
-```powershell
-python ".\Laboratório I\client_rpc.py"
-```
-
-## Observações
-- Porta padrão: `18812` (padrão do RPyC).
-- Host e porta podem ser ajustados em `server_rpc.py` e `client_rpc.py`.
