@@ -1,0 +1,15 @@
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+.venv/
+venv/
+
+# Local database/runtime artifacts
+database/catalogo_filmes.db
+*.sqlite3
+
+# OS/editor artifacts
+.DS_Store
+Thumbs.db
