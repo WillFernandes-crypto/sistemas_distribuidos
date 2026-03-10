@@ -17,6 +17,7 @@ Exercitar conceitos de Sistemas Distribuídos, incluindo:
 Estrutura do projeto:
 
 - `cliente/app_cliente.py`: camada de apresentação (CLI)
+- `cliente/app_cliente_gui.py`: camada de apresentação (GUI com cards e animacoes)
 - `servico_nomes/lookup_service.py`: nó de nomes (registro e busca de serviços)
 - `servidor/servidor_rpc.py`: servidor de negócio (RPC multithread)
 - `servidor/sincronizacao.py`: exclusão mútua por recurso
@@ -73,6 +74,14 @@ Fluxo principal:
   - Ver histórico
 - Descoberta automática do servidor via lookup
 
+### Cliente GUI (`app_cliente_gui.py`)
+
+- Interface visual com cards de filmes e status por disponibilidade
+- Carregamento assincrono para evitar travamentos da interface
+- Feedback visual com notificacoes animadas (toast)
+- Janela dedicada para historico de alugueis
+- Descoberta automatica do servidor via lookup (mesmo fluxo RPC do CLI)
+
 ## Como executar
 
 > Execute os comandos **a partir da pasta `projeto_aluguel_filmes`**.
@@ -97,6 +106,14 @@ Em outro terminal:
 
 ```bash
 python cliente/app_cliente.py
+```
+
+### 4) (Opcional) Executar a interface grafica
+
+Em outro terminal:
+
+```bash
+python cliente/app_cliente_gui.py
 ```
 
 ## Variáveis de ambiente opcionais
