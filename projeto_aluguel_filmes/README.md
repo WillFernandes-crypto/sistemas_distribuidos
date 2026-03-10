@@ -22,7 +22,7 @@ Estrutura do projeto:
 - `servidor/servidor_rpc.py`: servidor de negócio (RPC multithread)
 - `servidor/sincronizacao.py`: exclusão mútua por recurso
 - `database/persistencia.py`: persistência com SQLite
-- `requirements.txt`: dependências (atualmente apenas biblioteca padrão)
+- `requirements.txt`: dependências externas da interface/infra
 
 Fluxo principal:
 
@@ -38,6 +38,7 @@ Fluxo principal:
 - `socketserver.ThreadingMixIn` (atendimento concorrente)
 - `sqlite3` (persistência local)
 - `threading.Lock` (sincronização)
+- `Pillow` (renderização de capas de filmes na interface GUI)
 
 ## Funcionalidades implementadas
 
@@ -52,6 +53,7 @@ Fluxo principal:
 - Registro automático no serviço de nomes ao iniciar
 - `listar_filmes()`: retorna catálogo com cópias disponíveis
 - `alugar_filme(filme_id, cliente)`: efetiva aluguel com lock por filme
+- `devolver_filme(filme_id, cliente)`: registra devolução e reestabelece estoque
 - `historico_alugueis()`: retorna histórico de aluguéis
 - Suporte a múltiplas requisições simultâneas (multithread)
 
@@ -60,6 +62,7 @@ Fluxo principal:
 - Criação automática de banco SQLite (`database/catalogo_filmes.db`)
 - Criação das tabelas `filmes` e `alugueis`
 - Carga inicial (seed) do catálogo na primeira execução
+- Migração automática da coluna de devolução para bases já existentes
 
 ### Sincronização (`sincronizacao.py`)
 
@@ -71,15 +74,19 @@ Fluxo principal:
 - Interface CLI com menu:
   - Listar filmes
   - Alugar filme
+  - Devolver filme
   - Ver histórico
 - Descoberta automática do servidor via lookup
 
 ### Cliente GUI (`app_cliente_gui.py`)
 
-- Interface visual com cards de filmes e status por disponibilidade
+- Catálogo visual em grade com capas de filmes (ícones)
+- Nome do filme exibido logo abaixo de cada capa
+- Busca por título com filtro instantâneo no catálogo
+- Seleção por clique na capa para aluguel/devolução
 - Carregamento assincrono para evitar travamentos da interface
 - Feedback visual com notificacoes animadas (toast)
-- Janela dedicada para historico de alugueis
+- Janela dedicada para historico com status (`ativo`/`devolvido`)
 - Descoberta automatica do servidor via lookup (mesmo fluxo RPC do CLI)
 
 ## Como executar
@@ -139,10 +146,11 @@ python servico_nomes/lookup_service.py
 2. No cliente, liste o catálogo.
 3. Abra um segundo cliente e tente alugar o mesmo filme com apenas 1 cópia.
 4. Mostre que apenas um aluguel é confirmado quando acabar o estoque.
-5. Exiba o histórico para comprovar as operações registradas.
+5. Faça a devolução do filme e confirme o retorno do estoque.
+6. Exiba o histórico para comprovar operações ativas e devolvidas.
 
 ## Observações
 
-- O projeto usa apenas bibliotecas nativas do Python.
+- A GUI usa `Pillow` para leitura e redimensionamento das capas.
 - O banco SQLite é criado automaticamente na primeira execução.
 - Para reiniciar o estado inicial, remova o arquivo `database/catalogo_filmes.db`.

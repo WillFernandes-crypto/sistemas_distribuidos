@@ -40,6 +40,18 @@ def alugar(proxy: ServerProxy) -> None:
 	print(resposta.get("mensagem", "Sem mensagem retornada."))
 
 
+def devolver(proxy: ServerProxy) -> None:
+	try:
+		filme_id = int(input("Informe o ID do filme para devolver: ").strip())
+	except ValueError:
+		print("ID inválido.")
+		return
+
+	cliente = input("Seu nome: ").strip() or "Cliente Anônimo"
+	resposta = proxy.devolver_filme(filme_id, cliente)
+	print(resposta.get("mensagem", "Sem mensagem retornada."))
+
+
 def mostrar_historico(proxy: ServerProxy) -> None:
 	historico = proxy.historico_alugueis()
 	print("\n=== Histórico de Aluguéis ===")
@@ -65,7 +77,8 @@ def main() -> None:
 	while True:
 		print("\n1) Listar filmes")
 		print("2) Alugar filme")
-		print("3) Ver histórico")
+		print("3) Devolver filme")
+		print("4) Ver histórico")
 		print("0) Sair")
 		opcao = input("Escolha: ").strip()
 
@@ -74,6 +87,8 @@ def main() -> None:
 		elif opcao == "2":
 			alugar(proxy)
 		elif opcao == "3":
+			devolver(proxy)
+		elif opcao == "4":
 			mostrar_historico(proxy)
 		elif opcao == "0":
 			print("Encerrando cliente.")

@@ -32,6 +32,11 @@ class ServidorAluguel:
 		with self.locks.lock_recurso(chave_recurso):
 			return self.repositorio.alugar_filme(filme_id=int(filme_id), cliente=cliente)
 
+	def devolver_filme(self, filme_id: int, cliente: str) -> dict:
+		chave_recurso = f"filme:{filme_id}"
+		with self.locks.lock_recurso(chave_recurso):
+			return self.repositorio.devolver_filme(filme_id=int(filme_id), cliente=cliente)
+
 	def historico_alugueis(self) -> list:
 		return self.repositorio.historico_alugueis()
 

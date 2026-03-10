@@ -35,13 +35,32 @@ class RepositorioFilmes:
 						filme_id INTEGER NOT NULL,
 						cliente TEXT NOT NULL,
 						data_hora TEXT DEFAULT CURRENT_TIMESTAMP,
+						devolvido_em TEXT,
 						FOREIGN KEY(filme_id) REFERENCES filmes(id)
 					)
 					"""
 				)
+				self._garantir_coluna_devolucao(conn)
 				conn.commit()
 
 			self._seed_if_empty()
+			self._sincronizar_catalogo_base()
+
+	def _catalogo_base(self) -> list[tuple[int, str, int]]:
+		return [
+			(1, "Interestelar", 2),
+			(2, "Matrix", 1),
+			(3, "Cidade de Deus", 3),
+			(4, "O Alto da Compadecida", 2),
+			(5, "A Viagem de Chihiro", 1),
+			(6, "O Poderoso Chefão", 2),
+			(7, "A Lista de Schindler", 2),
+		]
+
+	def _garantir_coluna_devolucao(self, conn: sqlite3.Connection) -> None:
+		colunas = {row["name"] for row in conn.execute("PRAGMA table_info(alugueis)").fetchall()}
+		if "devolvido_em" not in colunas:
+			conn.execute("ALTER TABLE alugueis ADD COLUMN devolvido_em TEXT")
 
 	def _seed_if_empty(self) -> None:
 		with self._connect() as conn:
@@ -49,16 +68,35 @@ class RepositorioFilmes:
 			if total > 0:
 				return
 
-			filmes_iniciais = [
-				(1, "Interestelar", 2),
-				(2, "Matrix", 1),
-				(3, "Cidade de Deus", 3),
-				(4, "O Senhor dos Anéis", 2),
-				(5, "A Viagem de Chihiro", 1),
-			]
 			conn.executemany(
 				"INSERT INTO filmes (id, titulo, disponiveis) VALUES (?, ?, ?)",
-				filmes_iniciais,
+				self._catalogo_base(),
+			)
+			conn.commit()
+
+	def _sincronizar_catalogo_base(self) -> None:
+		with self._connect() as conn:
+			for filme_id, titulo, disponiveis_default in self._catalogo_base():
+				row = conn.execute(
+					"SELECT id, titulo FROM filmes WHERE id = ?",
+					(filme_id,),
+				).fetchone()
+
+				if row is None:
+					conn.execute(
+						"INSERT INTO filmes (id, titulo, disponiveis) VALUES (?, ?, ?)",
+						(filme_id, titulo, disponiveis_default),
+					)
+				elif row["titulo"] != titulo:
+					conn.execute(
+						"UPDATE filmes SET titulo = ? WHERE id = ?",
+						(titulo, filme_id),
+					)
+
+			# Remove item antigo caso esteja fora do catalogo padrao.
+			conn.execute(
+				"DELETE FROM filmes WHERE titulo IN (?, ?)",
+				("O Senhor dos Anéis", "O Senhor dos Aneis"),
 			)
 			conn.commit()
 
@@ -113,12 +151,66 @@ class RepositorioFilmes:
 					),
 				}
 
+	def devolver_filme(self, filme_id: int, cliente: str) -> Dict:
+		with self._db_lock:
+			with self._connect() as conn:
+				filme = conn.execute(
+					"SELECT id, titulo FROM filmes WHERE id = ?",
+					(filme_id,),
+				).fetchone()
+
+				if filme is None:
+					return {
+						"ok": False,
+						"mensagem": f"Filme com id {filme_id} não encontrado.",
+					}
+
+				aluguel = conn.execute(
+					"""
+					SELECT id
+					FROM alugueis
+					WHERE filme_id = ? AND cliente = ? AND devolvido_em IS NULL
+					ORDER BY id DESC
+					LIMIT 1
+					""",
+					(filme_id, cliente),
+				).fetchone()
+
+				if aluguel is None:
+					return {
+						"ok": False,
+						"mensagem": (
+							f"Nenhum aluguel ativo de '{filme['titulo']}' encontrado para {cliente}."
+						),
+					}
+
+				conn.execute(
+					"UPDATE filmes SET disponiveis = disponiveis + 1 WHERE id = ?",
+					(filme_id,),
+				)
+				conn.execute(
+					"UPDATE alugueis SET devolvido_em = CURRENT_TIMESTAMP WHERE id = ?",
+					(aluguel["id"],),
+				)
+				conn.commit()
+
+				return {
+					"ok": True,
+					"mensagem": f"Devolução registrada para '{filme['titulo']}' por {cliente}.",
+				}
+
 	def historico_alugueis(self) -> List[Dict]:
 		with self._db_lock:
 			with self._connect() as conn:
 				rows = conn.execute(
 					"""
-					SELECT a.id, a.cliente, a.data_hora, f.titulo
+					SELECT
+						a.id,
+						a.cliente,
+						a.data_hora,
+						a.devolvido_em,
+						f.titulo,
+						CASE WHEN a.devolvido_em IS NULL THEN 'ativo' ELSE 'devolvido' END AS status
 					FROM alugueis a
 					JOIN filmes f ON f.id = a.filme_id
 					ORDER BY a.id DESC
@@ -130,6 +222,8 @@ class RepositorioFilmes:
 				"id": row["id"],
 				"cliente": row["cliente"],
 				"data_hora": row["data_hora"],
+				"devolvido_em": row["devolvido_em"],
+				"status": row["status"],
 				"titulo": row["titulo"],
 			}
 			for row in rows
